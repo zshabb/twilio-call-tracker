@@ -28,9 +28,8 @@ def get_calls():
 
     try:
         client = Client(parent_sid, auth_token)
-        subclient = client.accounts(sub_sid)
+        subclient = client.api.accounts(sub_sid)
         calls = subclient.calls.list(limit=50)
-
         return jsonify([
             {
                 "from": c.from_,
