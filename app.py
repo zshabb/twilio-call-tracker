@@ -30,6 +30,7 @@ def get_calls():
         client = Client(parent_sid, auth_token)
         subclient = client.api.accounts(sub_sid)
         calls = subclient.calls.list(limit=50)
+        inbound_calls = [c for c in calls if c.direction == "inbound"]
         return jsonify([
             {
                 "from": c.from_formatted,
@@ -37,7 +38,7 @@ def get_calls():
                 "start_time": str(c.start_time),
                 "duration": c.duration,
                 "status": c.status
-            } for c in calls
+            } for c in inbound_calls
         ])
 
     except Exception as e:
