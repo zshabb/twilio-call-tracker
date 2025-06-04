@@ -44,8 +44,8 @@ def get_calls():
 
         return jsonify([
             {
-                "from": c.from_formatted,
-                "to": c.to_formatted,
+                "from": getattr(c, 'from_'),
+                "to": c.to,
                 "start_time": str(c.start_time),
                 "duration": c.duration,
                 "status": c.status
@@ -78,6 +78,7 @@ def get_numbers():
         return jsonify([n.phone_number for n in numbers])
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
