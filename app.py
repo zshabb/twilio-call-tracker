@@ -1,3 +1,4 @@
+from datetime import datetime, timedelta
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from twilio.rest import Client
@@ -9,30 +10,39 @@ CORS(app)
 @app.route('/api/calls', methods=['GET'])
 def get_calls():
     advertiser_key = request.args.get('key')
+    from_date_str = request.args.get('from_date')
+    to_date_str = request.args.get('to_date')
 
-    # 🔒 Mapping of advertiser keys to Twilio Subaccount SIDs
     mapping = {
         "abcmarketing": os.environ.get("SUBACCOUNT_ABC"),
         "xyzmedia": os.environ.get("SUBACCOUNT_XYZ")
-        # Add more advertisers and their subaccount SIDs as needed
     }
 
     sub_sid = mapping.get(advertiser_key)
     if not sub_sid:
-        return jsonify({"error": "Invalid advertiser key"}), 403
+        return jsonify({"error": "Invalid advertiser key"}), 200
 
-    # Load main account SID and auth token securely
     parent_sid = os.environ.get("TWILIO_ACCOUNT_SID")
     auth_token = os.environ.get("TWILIO_AUTH_TOKEN")
+    client = Client(parent_sid, auth_token)
+    subclient = client.api.accounts(sub_sid)
 
-    if not parent_sid or not auth_token:
-        return jsonify({"error": "Missing Twilio credentials"}), 500
+    # Optional date filtering
+    try:
+        from_date = datetime.strptime(from_date_str, "%Y-%m-%d") if from_date_str else None
+        to_date = datetime.strptime(to_date_str, "%Y-%m-%d") if to_date_str else None
+    except Exception as e:
+        return jsonify({"error": "Invalid date format. Use YYYY-MM-DD."}), 200
 
     try:
-        client = Client(parent_sid, auth_token)
-        subclient = client.api.accounts(sub_sid)
-        calls = subclient.calls.list(limit=50)
-        inbound_calls = [c for c in calls if c.direction == "inbound"]
+        all_calls = subclient.calls.list(limit=1000)
+        inbound_calls = [
+            c for c in all_calls 
+            if c.direction == "inbound"
+            and (not from_date or c.start_time.date() >= from_date.date())
+            and (not to_date or c.start_time.date() <= to_date.date())
+        ]
+
         return jsonify([
             {
                 "from": c.from_formatted,
@@ -42,11 +52,10 @@ def get_calls():
                 "status": c.status
             } for c in inbound_calls
         ])
-
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-# 🔧 Required for Render deployment — binds to assigned port
+# Keep this at the bottom
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
