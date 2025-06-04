@@ -32,8 +32,8 @@ def get_calls():
         calls = subclient.calls.list(limit=50)
         return jsonify([
             {
-                "from": c.from_,
-                "to": c.to,
+                "from": c.from_formatted,
+                "to": c.to_formatted,
                 "start_time": str(c.start_time),
                 "duration": c.duration,
                 "status": c.status
