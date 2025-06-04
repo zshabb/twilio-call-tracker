@@ -1,8 +1,10 @@
 from flask import Flask, request, jsonify
+from flask_cors import CORS
 from twilio.rest import Client
 import os
 
 app = Flask(__name__)
+CORS(app)
 
 @app.route('/api/calls', methods=['GET'])
 def get_calls():
