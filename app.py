@@ -8,29 +8,43 @@ app = Flask(__name__)
 def get_calls():
     advertiser_key = request.args.get('key')
 
-    # Map keys to subaccount SIDs
+    # 🔒 Mapping of advertiser keys to Twilio Subaccount SIDs
     mapping = {
-        "abcmarketing": "ACxxxxxxxxxxxxxxx1",
-        "xyzmedia": "ACyyyyyyyyyyyyyyy2"
+        "abcmarketing": os.environ.get("SUBACCOUNT_ABC"),
+        "xyzmedia": os.environ.get("SUBACCOUNT_XYZ")
+        # Add more advertisers and their subaccount SIDs as needed
     }
 
     sub_sid = mapping.get(advertiser_key)
     if not sub_sid:
-        return jsonify({"error": "Invalid key"}), 403
+        return jsonify({"error": "Invalid advertiser key"}), 403
 
+    # Load main account SID and auth token securely
     parent_sid = os.environ.get("TWILIO_ACCOUNT_SID")
     auth_token = os.environ.get("TWILIO_AUTH_TOKEN")
 
-    client = Client(parent_sid, auth_token)
-    subclient = client.accounts(sub_sid)
+    if not parent_sid or not auth_token:
+        return jsonify({"error": "Missing Twilio credentials"}), 500
 
-    calls = subclient.calls.list(limit=50)
-    return jsonify([
-        {
-            "from": c.from_,
-            "to": c.to,
-            "start_time": str(c.start_time),
-            "duration": c.duration,
-            "status": c.status
-        } for c in calls
-    ])
+    try:
+        client = Client(parent_sid, auth_token)
+        subclient = client.accounts(sub_sid)
+        calls = subclient.calls.list(limit=50)
+
+        return jsonify([
+            {
+                "from": c.from_,
+                "to": c.to,
+                "start_time": str(c.start_time),
+                "duration": c.duration,
+                "status": c.status
+            } for c in calls
+        ])
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+# 🔧 Required for Render deployment — binds to assigned port
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port)
