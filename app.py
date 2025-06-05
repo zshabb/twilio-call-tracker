@@ -44,7 +44,7 @@ def get_calls():
 
         return jsonify([
             {
-                "from": c.__dict__.get('from', ''),
+                "from": c.__dict__.get('from_', ''),
                 "to": c.to,
                 "start_time": str(c.start_time),
                 "duration": c.duration,
