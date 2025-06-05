@@ -2,6 +2,7 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 from twilio.rest import Client
 from datetime import datetime
+import pytz
 import os
 
 app = Flask(__name__)
@@ -33,13 +34,15 @@ def get_calls():
     except:
         return jsonify({"error": "Invalid date format. Use YYYY-MM-DD."}), 200
 
+    eastern = pytz.timezone("US/Eastern")
+
     try:
         all_calls = subclient.calls.list(limit=1000)
         inbound_calls = [
             c for c in all_calls
             if c.direction == "inbound"
-            and (not from_date or c.start_time.date() >= from_date)
-            and (not to_date or c.start_time.date() <= to_date)
+            and (not from_date or c.start_time.astimezone(eastern).date() >= from_date)
+            and (not to_date or c.start_time.astimezone(eastern).date() <= to_date)
         ]
 
         return jsonify([
