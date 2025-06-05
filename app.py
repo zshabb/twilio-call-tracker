@@ -28,8 +28,8 @@ def get_calls():
     subclient = client.api.accounts(sub_sid)
 
     try:
-        from_date = datetime.strptime(from_date_str, "%Y-%m-%d") if from_date_str else None
-        to_date = datetime.strptime(to_date_str, "%Y-%m-%d") if to_date_str else None
+        from_date = datetime.strptime(from_date_str, "%Y-%m-%d").date() if from_date_str else None
+        to_date = datetime.strptime(to_date_str, "%Y-%m-%d").date() if to_date_str else None
     except:
         return jsonify({"error": "Invalid date format. Use YYYY-MM-DD."}), 200
 
@@ -38,8 +38,8 @@ def get_calls():
         inbound_calls = [
             c for c in all_calls
             if c.direction == "inbound"
-            and (not from_date or c.start_time.date() >= from_date.date())
-            and (not to_date or c.start_time.date() <= to_date.date())
+            and (not from_date or c.start_time.date() >= from_date)
+            and (not to_date or c.start_time.date() <= to_date)
         ]
 
         return jsonify([
