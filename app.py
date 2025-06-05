@@ -49,7 +49,7 @@ def get_calls():
             {
                 "from": c.__dict__.get('from_formatted', ''),
                 "to": c.to,
-                "start_time": str(c.start_time),
+                "start_time": c.start_time.astimezone(eastern).isoformat()
                 "duration": c.duration,
                 "status": c.status
             } for c in inbound_calls
