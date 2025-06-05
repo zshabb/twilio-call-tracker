@@ -49,11 +49,13 @@ def get_calls():
             {
                 "from": c.__dict__.get('from_formatted', ''),
                 "to": c.to,
-                "start_time": c.start_time.astimezone(eastern).isoformat()
+                "start_time": c.start_time.astimezone(eastern).isoformat(),
                 "duration": c.duration,
                 "status": c.status
-            } for c in inbound_calls
+            }
+            for c in inbound_calls
         ])
+
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
