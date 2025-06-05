@@ -75,7 +75,12 @@ def get_numbers():
 
     try:
         numbers = subclient.incoming_phone_numbers.list()
-        return jsonify([n.phone_number for n in numbers])
+        return jsonify([
+            {
+                "phone_number": n.phone_number,
+                "friendly_name": n.friendly_name or n.phone_number
+            } for n in numbers
+        ])
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
