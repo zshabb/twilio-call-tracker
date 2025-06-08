@@ -79,13 +79,20 @@ def get_numbers():
     subclient = client.api.accounts(sub_sid)
 
     try:
+        # Get subaccount info to extract friendly_name
+        subaccount_info = client.api.accounts(sub_sid).fetch()
+        campaign_name = subaccount_info.friendly_name
+
         numbers = subclient.incoming_phone_numbers.list()
-        return jsonify([
-            {
-                "phone_number": n.phone_number,
-                "friendly_name": n.friendly_name or n.phone_number
-            } for n in numbers
-        ])
+        return jsonify({
+            "campaign_name": campaign_name,
+            "numbers": [
+                {
+                    "phone_number": n.phone_number,
+                    "friendly_name": n.friendly_name or n.phone_number
+                } for n in numbers
+            ]
+        })
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
