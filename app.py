@@ -8,6 +8,27 @@ import os
 app = Flask(__name__)
 CORS(app)
 
+# Hardcoded credentials (move to environment variables in production)
+CREDENTIALS = {
+    "abcmarketing": os.environ.get("ABC_PASSWORD", "abc123"),
+    "xyzmedia": os.environ.get("XYZ_PASSWORD", "xyz123")
+}
+
+@app.route('/api/auth', methods=['POST'])
+def auth():
+    data = request.get_json()
+    key = data.get("key")
+    password = data.get("password")
+
+    if not key or not password:
+        return jsonify({"success": False}), 400
+
+    expected_password = CREDENTIALS.get(key)
+    if expected_password and password == expected_password:
+        return jsonify({"success": True})
+    else:
+        return jsonify({"success": False})
+
 @app.route('/api/calls', methods=['GET'])
 def get_calls():
     advertiser_key = request.args.get('key')
@@ -37,6 +58,9 @@ def get_calls():
     eastern = pytz.timezone("US/Eastern")
 
     try:
+        numbers = subclient.incoming_phone_numbers.list()
+        to_map = {n.phone_number: n.friendly_name or n.phone_number for n in numbers}
+
         all_calls = subclient.calls.list(limit=1000)
         inbound_calls = [
             c for c in all_calls
@@ -47,8 +71,8 @@ def get_calls():
 
         return jsonify([
             {
-                "from": c.__dict__.get('from_formatted', ''),
-                "to": c.to,
+                "from": c.from_[-4:].rjust(len(c.from_), "*"),
+                "to": to_map.get(c.to, c.to),
                 "start_time": c.start_time.astimezone(eastern).isoformat(),
                 "duration": c.duration,
                 "status": c.status
@@ -58,7 +82,6 @@ def get_calls():
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-
 
 @app.route('/api/numbers', methods=['GET'])
 def get_numbers():
@@ -79,13 +102,9 @@ def get_numbers():
     subclient = client.api.accounts(sub_sid)
 
     try:
-        # Get subaccount info to extract friendly_name
-        subaccount_info = client.api.accounts(sub_sid).fetch()
-        campaign_name = subaccount_info.friendly_name
-
         numbers = subclient.incoming_phone_numbers.list()
         return jsonify({
-            "campaign_name": campaign_name,
+            "campaign_name": advertiser_key,
             "numbers": [
                 {
                     "phone_number": n.phone_number,
@@ -95,7 +114,6 @@ def get_numbers():
         })
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
