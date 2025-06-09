@@ -71,7 +71,7 @@ def get_calls():
 
         return jsonify([
             {
-                "from": c.from_[-4:].rjust(len(c.from_), "*"),
+                "from": f"{'*' * (len(c.from_) - 4)}{c.from_[-4:]}" if c.from_ else ''
                 "to": to_map.get(c.to, c.to),
                 "start_time": c.start_time.astimezone(eastern).isoformat(),
                 "duration": c.duration,
