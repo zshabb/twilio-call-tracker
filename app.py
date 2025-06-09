@@ -8,6 +8,26 @@ import os
 app = Flask(__name__)
 CORS(app)
 
+# In-memory password store (use environment variables in production)
+PASSWORDS = {
+    "abcmarketing": os.environ.get("PASSWORD_ABC"),
+    "xyzmedia": os.environ.get("PASSWORD_XYZ")
+}
+
+@app.route('/api/login', methods=['POST'])
+def login():
+    data = request.get_json()
+    key = data.get("key")
+    password = data.get("password")
+
+    if not key or not password:
+        return jsonify({"error": "Missing key or password"}), 400
+
+    if PASSWORDS.get(key) == password:
+        return jsonify({"success": True})
+    else:
+        return jsonify({"error": "Invalid credentials"}), 403
+
 @app.route('/api/calls', methods=['GET'])
 def get_calls():
     advertiser_key = request.args.get('key')
@@ -79,7 +99,6 @@ def get_numbers():
     subclient = client.api.accounts(sub_sid)
 
     try:
-        # Get subaccount info to extract friendly_name
         subaccount_info = client.api.accounts(sub_sid).fetch()
         campaign_name = subaccount_info.friendly_name
 
